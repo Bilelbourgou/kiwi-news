@@ -79,15 +79,15 @@ export function Footer() {
           {/* Connect (2 cols) */}
           <div className="md:col-span-2 space-y-3">
             <h4 className="text-[13px] font-semibold text-white tracking-wide">Connect</h4>
-            <div className="flex items-center gap-3.5 text-white/80">
+            <div className="flex items-center gap-2.5">
               {/* X / Twitter */}
               <Link
                 href="#"
                 aria-label="X"
-                className="hover:text-white hover:scale-110 transition-transform"
+                className="w-8 h-8 rounded-[6px] bg-white/[0.08] hover:bg-white/[0.16] flex items-center justify-center text-white/80 hover:text-white transition-all hover:scale-105"
               >
                 <svg
-                  className="w-4 h-4 fill-currentColor"
+                  className="w-3.5 h-3.5 fill-white"
                   viewBox="0 0 24 24"
                   aria-hidden="true"
                 >
@@ -99,10 +99,10 @@ export function Footer() {
               <Link
                 href="#"
                 aria-label="LinkedIn"
-                className="hover:text-white hover:scale-110 transition-transform"
+                className="w-8 h-8 rounded-[6px] bg-white/[0.08] hover:bg-white/[0.16] flex items-center justify-center text-white/80 hover:text-white transition-all hover:scale-105"
               >
                 <svg
-                  className="w-4 h-4 fill-currentColor"
+                  className="w-3.5 h-3.5 fill-white"
                   viewBox="0 0 24 24"
                   aria-hidden="true"
                 >
@@ -114,10 +114,10 @@ export function Footer() {
               <Link
                 href="#"
                 aria-label="Substack"
-                className="hover:text-white hover:scale-110 transition-transform"
+                className="w-8 h-8 rounded-[6px] bg-white/[0.08] hover:bg-white/[0.16] flex items-center justify-center text-white/80 hover:text-white transition-all hover:scale-105"
               >
                 <svg
-                  className="w-4 h-4 fill-currentColor"
+                  className="w-3.5 h-3.5 fill-white"
                   viewBox="0 0 24 24"
                   aria-hidden="true"
                 >
@@ -129,10 +129,10 @@ export function Footer() {
               <Link
                 href="#"
                 aria-label="YouTube"
-                className="hover:text-white hover:scale-110 transition-transform"
+                className="w-8 h-8 rounded-[6px] bg-white/[0.08] hover:bg-white/[0.16] flex items-center justify-center text-white/80 hover:text-white transition-all hover:scale-105"
               >
                 <svg
-                  className="w-4 h-4 fill-currentColor"
+                  className="w-3.5 h-3.5 fill-white"
                   viewBox="0 0 24 24"
                   aria-hidden="true"
                 >

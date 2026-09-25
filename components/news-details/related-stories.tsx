@@ -1,7 +1,16 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { RelatedStoryItem } from "@/lib/mock-news-data";
+
+export interface RelatedStoryItem {
+  id: string;
+  category: string;
+  region: string;
+  title: string;
+  imageUrl: string;
+  date: string;
+  readingTime: string;
+}
 
 export interface RelatedStoriesProps {
   stories: RelatedStoryItem[];
@@ -18,7 +27,7 @@ export function RelatedStories({ stories }: RelatedStoriesProps) {
         {stories.map((story) => (
           <Link
             key={story.id}
-            href={`/news/1`}
+            href={`/news/${story.id}`}
             className="bg-white rounded-[8px] border border-[#E5E7EB] p-3 flex items-center gap-3.5 hover:shadow-[0px_2px_8px_rgba(0,0,0,0.06)] hover:border-[#D1D5DB] transition-all group"
           >
             {/* Thumbnail */}

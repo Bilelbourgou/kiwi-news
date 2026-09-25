@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { Menu, Globe, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Show, SignInButton, UserButton } from "@clerk/nextjs";
 
 export function Header() {
   const [activeTab, setActiveTab] = useState("Home");
@@ -87,7 +88,7 @@ export function Header() {
           <button
             type="button"
             aria-label="Open menu"
-            className="p-1.5 -ml-1.5 text-[#0D0D0F] hover:bg-[#F6F6F6] rounded-md transition-colors"
+            className="md:hidden p-1.5 -ml-1.5 text-[#0D0D0F] hover:bg-[#F6F6F6] rounded-md transition-colors"
           >
             <Menu className="w-6 h-6 stroke-[2]" />
           </button>
@@ -156,22 +157,36 @@ export function Header() {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2.5">
-          <Button
-            variant="primary"
-            size="sm"
-            className="rounded-[6px] px-4 font-medium text-[13px] h-9"
-          >
-            Subscribe
-          </Button>
+          <Show when="signed-out">
+            <Button
+              variant="primary"
+              size="sm"
+              className="rounded-[6px] px-4 font-medium text-[13px] h-9"
+            >
+              Subscribe
+            </Button>
 
-          <Button
-            variant="secondary"
-            visualState="outline"
-            size="sm"
-            className="rounded-[6px] px-4 font-medium text-[13px] h-9"
-          >
-            Login
-          </Button>
+            <SignInButton mode="modal">
+              <Button
+                variant="secondary"
+                visualState="outline"
+                size="sm"
+                className="rounded-[6px] px-4 font-medium text-[13px] h-9 cursor-pointer"
+              >
+                Sign In
+              </Button>
+            </SignInButton>
+          </Show>
+
+          <Show when="signed-in">
+            <UserButton
+              appearance={{
+                elements: {
+                  avatarBox: "w-9 h-9 rounded-full border border-[#E5E7EB]",
+                },
+              }}
+            />
+          </Show>
         </div>
       </div>
     </header>

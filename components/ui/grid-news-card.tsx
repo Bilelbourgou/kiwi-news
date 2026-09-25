@@ -2,7 +2,20 @@ import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Info } from "lucide-react";
-import { NewsArticleItem } from "@/lib/mock-news-data";
+
+export interface NewsArticleItem {
+  id: string;
+  category: string;
+  region: string;
+  title: string;
+  imageUrl: string;
+  leftPercentage: number;
+  centerPercentage: number;
+  rightPercentage: number;
+  sourcesCount: number;
+  publishedAgo?: string;
+  readingTime?: string;
+}
 
 export interface GridNewsCardProps {
   article: NewsArticleItem;
