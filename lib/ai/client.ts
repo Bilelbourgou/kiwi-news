@@ -55,3 +55,17 @@ export function getAIModel(requestedModelName?: string) {
 
 /** Backwards-compatible alias */
 export const getOpenAIModel = getAIModel;
+
+/**
+ * Returns a configured embedding model for pgvector generation (AGENTS.md §20).
+ *
+ * Requires OPENAI_API_KEY — Groq does NOT support standard embedding models.
+ * Returns null when the key is absent so callers can skip embedding gracefully.
+ */
+export function getEmbeddingModel() {
+  const openaiApiKey = process.env.OPENAI_API_KEY?.trim();
+  if (!openaiApiKey) return null;
+
+  const openai = createOpenAI({ apiKey: openaiApiKey });
+  return openai.embedding("text-embedding-3-small");
+}

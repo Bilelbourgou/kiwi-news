@@ -1,7 +1,7 @@
-import { generateText, Output } from "ai";
+import { generateText, Output, embed } from "ai";
 import { z } from "zod";
 
-import { getAIModel } from "./client";
+import { getAIModel, getEmbeddingModel } from "./client";
 import type { Article, BiasLabel, SentimentLabel } from "@/lib/supabase/types";
 
 export const aiRawAnalysisSchema = z.object({
@@ -86,6 +86,8 @@ export interface ArticleAnalysisData {
   loaded_terms: string[];
   disclaimer: string;
   model: string;
+  /** pgvector embedding — null when OPENAI_API_KEY is absent (AGENTS.md §20) */
+  embedding?: number[] | null;
 }
 
 /**
@@ -128,6 +130,34 @@ export function normalizePercentages(
   }
 
   return { leftPercentage: l, centerPercentage: c, rightPercentage: r };
+}
+
+/**
+ * Generates a 1536-dimensional embedding for the supplied text using
+ * OpenAI text-embedding-3-small (AGENTS.md §20).
+ *
+ * Returns null when OPENAI_API_KEY is not set (Groq does not support
+ * standard embedding models) or when generation fails, so the caller
+ * can skip embedding gracefully without interrupting the analysis run.
+ */
+export async function generateEmbedding(text: string): Promise<number[] | null> {
+  const model = getEmbeddingModel();
+  if (!model) {
+    console.warn(
+      "[ai-analysis] No embedding model available (OPENAI_API_KEY not set). Skipping embedding generation."
+    );
+    return null;
+  }
+  try {
+    const { embedding } = await embed({ model, value: text.slice(0, 8000) });
+    return embedding;
+  } catch (err) {
+    console.warn(
+      "[ai-analysis] Embedding generation failed:",
+      err instanceof Error ? err.message : String(err)
+    );
+    return null;
+  }
 }
 
 /**

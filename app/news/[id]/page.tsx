@@ -55,7 +55,13 @@ export default async function NewsDetailsPage({ params }: NewsPageProps) {
   const analysis = article.analysis;
   const biasLabel = analysis?.bias_label ?? null;
 
-  const relatedRows = await getRelatedArticles(id, article.source_id, biasLabel, 6);
+  const relatedRows = await getRelatedArticles(
+    id,
+    article.source_id,
+    biasLabel,
+    6,
+    article.analysis?.embedding ?? null
+  );
   const relatedStories = relatedRows.map(toRelatedStoryItem);
 
   // Derive paragraph display content

@@ -51,6 +51,8 @@ export interface ArticleAnalysis {
   loaded_terms: string[] | null;
   disclaimer: string | null;
   model: string;
+  /** pgvector embedding (1536 dims). Null until OPENAI_API_KEY is configured. */
+  embedding?: number[] | null;
   created_at: string;
 }
 

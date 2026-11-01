@@ -1,6 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/service";
 import type { Article } from "@/lib/supabase/types";
-import { analyzeArticle } from "./analysis";
+import { analyzeArticle, generateEmbedding } from "./analysis";
 
 export interface AnalysisPipelineOptions {
   articleIds?: string[];
@@ -241,16 +241,29 @@ export async function runAnalysisPipeline(
         // 1. Analyze with LLM + Zod schema + normalization + retry
         const analysisData = await analyzeArticle(article, modelName);
 
-        // 2. Persist to article_analyses table
+        // 2. Generate pgvector embedding (AGENTS.md §20)
+        //    Requires OPENAI_API_KEY — silently skipped when absent.
+        const embedding = await generateEmbedding(
+          article.title + " " + article.raw_text.slice(0, 7900)
+        );
+        if (embedding) {
+          console.log(`[ai-pipeline] Embedding generated for [${article.id}]`);
+        } else {
+          console.warn(
+            `[ai-pipeline] No embedding for [${article.id}] — OPENAI_API_KEY absent or generation failed`
+          );
+        }
+
+        // 3. Persist to article_analyses table (embedding may be null)
         const { error: insertError } = await supabase
           .from("article_analyses")
-          .insert(analysisData);
+          .insert({ ...analysisData, embedding });
 
         if (insertError) {
           throw new Error(`Failed to insert analysis row: ${insertError.message}`);
         }
 
-        // 3. Mark analyzed_at only AFTER valid analysis is persisted (AGENTS.md §19)
+        // 4. Mark analyzed_at only AFTER valid analysis is persisted (AGENTS.md §19)
         const nowIso = new Date().toISOString();
         const { error: updateError } = await supabase
           .from("articles")

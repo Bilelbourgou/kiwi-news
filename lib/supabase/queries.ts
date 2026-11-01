@@ -79,17 +79,65 @@ export async function getArticleById(
 /**
  * Fetch related articles for the details page sidebar.
  *
- * Strategy: same source first, then same bias label — excluding the current
- * article. Returns up to `limit` articles that have been analyzed.
+ * Strategy (AGENTS.md §20):
+ * 1. If an embedding is available, call the match_articles_by_embedding RPC and
+ *    return semantically similar articles ordered by cosine similarity.
+ * 2. Fall back to: same source first, then same bias label — when no embedding.
  */
 export async function getRelatedArticles(
   articleId: string,
   sourceId: string,
   biasLabel: string | null,
-  limit = 6
+  limit = 6,
+  embedding?: number[] | null
 ): Promise<ArticleWithAnalysis[]> {
   const supabase = await createClient();
 
+  // ── Strategy 1: pgvector cosine similarity ─────────────────────────────────
+  if (embedding && embedding.length > 0) {
+    const { data: rpcData, error: rpcError } = await supabase.rpc(
+      "match_articles_by_embedding",
+      {
+        query_embedding: embedding,
+        match_threshold: 0.7,
+        match_count: limit,
+        exclude_id: articleId,
+      }
+    );
+
+    if (rpcError) {
+      console.warn("[queries] match_articles_by_embedding RPC error:", rpcError.message);
+      // Fall through to keyword fallback
+    } else if (rpcData && rpcData.length > 0) {
+      const ids: string[] = rpcData.map((r: { article_id: string }) => r.article_id);
+
+      // Chunk fetch — max 15 per .in() call (AGENTS.md §9)
+      const CHUNK = 15;
+      const rows: ArticleWithAnalysis[] = [];
+      for (let i = 0; i < ids.length; i += CHUNK) {
+        const chunk = ids.slice(i, i + CHUNK);
+        const { data } = await supabase
+          .from("articles")
+          .select(
+            `
+            *,
+            source:sources ( id, name, logo_url, listing_url ),
+            analysis:article_analyses ( * )
+            `
+          )
+          .in("id", chunk);
+        if (data) {
+          rows.push(...(data.filter((r) => r.analysis !== null) as ArticleWithAnalysis[]));
+        }
+      }
+
+      if (rows.length > 0) return rows.slice(0, limit);
+      // If RPC returned IDs but none had analysis rows, fall through
+    }
+    // RPC returned zero matches — fall through to keyword fallback
+  }
+
+  // ── Strategy 2 (fallback): same source, then same bias label ───────────────
   // Same source, analyzed, excluding current
   const { data: sameSource } = await supabase
     .from("articles")
@@ -139,6 +187,7 @@ export async function getRelatedArticles(
 
   return results.slice(0, limit);
 }
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sources

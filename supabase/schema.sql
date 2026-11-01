@@ -19,6 +19,7 @@
 -- ─────────────────────────────────────────────────────────────────────────────
 
 create extension if not exists "uuid-ossp";
+create extension if not exists "vector";
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 2. Tables
@@ -66,6 +67,9 @@ create table if not exists article_analyses (
   loaded_terms      text[],
   disclaimer        text,
   model             text not null,
+  -- Embedding vector for semantic similarity search (pgvector §20)
+  -- NULL until OPENAI_API_KEY is configured and analysis re-runs
+  embedding         vector(1536),
   created_at        timestamptz not null default now(),
   -- Percentages must sum to 100
   constraint pct_sum_100 check (left_percentage + center_percentage + right_percentage = 100)
@@ -115,6 +119,8 @@ create index if not exists idx_articles_published_at on articles(published_at de
 
 -- article_analyses
 create index if not exists idx_article_analyses_article_id on article_analyses(article_id);
+-- Optional IVFFlat index for fast ANN cosine search — add only after >= 100 rows with embeddings:
+-- create index on article_analyses using ivfflat (embedding vector_cosine_ops) with (lists = 100);
 
 -- logs
 create index if not exists idx_logs_created_at on logs(created_at desc);
@@ -172,3 +178,43 @@ alter table oxylabs_schedules enable row level security;
 
 -- oxylabs_schedule_runs (private — no public policies)
 alter table oxylabs_schedule_runs enable row level security;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 5. pgvector RPC — semantic similarity search (AGENTS.md §20)
+-- ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * match_articles_by_embedding
+ *
+ * Returns analyzed article IDs ordered by cosine similarity to the supplied
+ * query embedding. Uses the <=> (cosine distance) operator from pgvector.
+ *
+ * Parameters:
+ *   query_embedding  – the 1536-dimensional query vector
+ *   match_threshold  – minimum cosine similarity (0–1); e.g. 0.7
+ *   match_count      – maximum rows to return
+ *   exclude_id       – article UUID to exclude (the current article)
+ */
+create or replace function match_articles_by_embedding(
+  query_embedding  vector(1536),
+  match_threshold  float,
+  match_count      int,
+  exclude_id       uuid
+)
+returns table (
+  article_id uuid,
+  similarity float
+)
+language sql stable
+as $$
+  select
+    aa.article_id,
+    1 - (aa.embedding <=> query_embedding) as similarity
+  from article_analyses aa
+  where
+    aa.embedding is not null
+    and aa.article_id <> exclude_id
+    and 1 - (aa.embedding <=> query_embedding) > match_threshold
+  order by aa.embedding <=> query_embedding
+  limit match_count;
+$$;
